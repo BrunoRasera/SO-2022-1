@@ -36,16 +36,54 @@ Exemplos de comandos:
 #include <sys/wait.h>
 #include <signal.h>
 
+/*  Função auxiliar que conta a quantidade de 
+    comandos e operadores enviados 
+    e salva nas posições 0 e 1 de qtds respectivamente
+*/
+void qtdBlocosOps (int argc, char **cmd, int *qtds){
 
-int main(int argc, char **argv)
-{
+    int i;
+
+    /*  Flag para leitura de comandos, 
+        quando 0 indica que ainda estamos lendo o mesmo comando, 
+        quando 1 estamos lendo um comando novo
+    */ 
+    int cont = 1;
+
+    for(i = 0; i < argc - 1; i++){
+
+        // Novo comando
+        if((strcmp(cmd[i],"|") != 0 || strcmp(cmd[i],"||") != 0 || strcmp(cmd[i],"&&") != 0 || strcmp(cmd[i],"&") != 0 ) && cont == 1){
+            qtds[0] += 1;
+            cont = 0;
+
+        }
+        else if (strcmp(cmd[i],"|") == 0 || strcmp(cmd[i],"||") == 0 || strcmp(cmd[i],"&&") == 0 || strcmp(cmd[i],"&") == 0 ) {
+
+            qtds[1] += 1;
+            cont = 1;
+
+        }
+    }
+}
+
+
+int main(int argc, char **argv){
     pid_t pid;
 
-    // Matriz de comandos recebe argv menos a primeira posição
+    // Matriz de comandos recebe argv menos a primeira posição (chamada do binário do shell)
     char **cmd = &argv[1];
 
-    // Vetor utilizado para armazenar as posições onde cada bloco de comando começa
-    int blocos[10];
+    /*
+        Vetor para contar a quantidade de comandos e operadores,
+        posição 0 para comandos e 1 para operadores
+    */
+    int qtds[2] = {0,0};
+
+    qtdBlocosOps(argc, cmd, qtds);
+
+    // Vetor utilizado para armazenar as posições onde cada bloco de comando começa na matriz cmd
+    int blocos[qtds[0]];
     blocos[0] = 0;
 
     // **fd é usado para controlar os pipes, que serão alocados futuramente
@@ -54,24 +92,23 @@ int main(int argc, char **argv)
     // Representa a quantidade de processos filhos que serão criados
     int filhos = 1;
 
-    // Vetor para controlar os tipos de operadores
-    int tipo[10];
+    // Vetor que armazena os tipos de operadores
+    int tipo[qtds[1]];
 
-    int i, k=0;
+    int i, k = 0;
 
     // Checa se o programa foi executado com o número correto de argumentos
-    if (argc == 1)
-    {
+    if (argc == 1){
+
         printf("Uso correto: %s <comando> <p_1> <p_2> ... <p_n>\n", argv[0]);
         return 0;
+
     }
 
     // Checamos os tipos de comandos existentes e separamos em blocos 
-    for(i=0; i<argc-1; i++)
-    {
+    for(i = 0; i < argc - 1; i++){
         // Caso pipe ("|")
-        if(strcmp(cmd[i],"|") == 0)
-        {
+        if(strcmp(cmd[i],"|") == 0){
             tipo[k] = 0;
             tipo[k+1] = 0;
             blocos[filhos] = i+1;
@@ -79,27 +116,27 @@ int main(int argc, char **argv)
             filhos++;
             k = k + 2;
         }
+
         // Caso independente (;)
-        else if(strcmp(cmd[i], ";") == 0)
-        {
+        else if(strcmp(cmd[i], ";") == 0){
             tipo[k] = 1;
             blocos[filhos] = i+1;
             cmd[i] = NULL;
             filhos++;
             k++;
         }
+
         // Caso OR ("||")
-        else if(strcmp(cmd[i], "||") == 0)
-        {
+        else if(strcmp(cmd[i], "||") == 0){
             tipo[k] = 2;
             blocos[filhos] = i+1;
             cmd[i] = NULL;
             filhos++;
             k ++;
         }
+
         // Caso AND ("&&")
-        else if(strcmp(cmd[i], "&&") == 0)
-        {
+        else if(strcmp(cmd[i], "&&") == 0){
             tipo[k] = 3;
 
             blocos[filhos] = i+1;
@@ -107,9 +144,9 @@ int main(int argc, char **argv)
             filhos++;
             k ++;
         }
+
         // Caso background ("&")
-        else if(strcmp(cmd[i], "&") == 0)
-        {
+        else if(strcmp(cmd[i], "&") == 0){
             tipo[k] = 4;
             blocos[filhos] = i+1;
             cmd[i] = NULL;
@@ -121,94 +158,83 @@ int main(int argc, char **argv)
 
     // Alocação da matriz de pipes
     fd = (int**) malloc((filhos)*sizeof(int*));
-    for(i=0; i<filhos; i++)
-    {
+
+    for(i=0; i<filhos; i++){
         fd[i] = (int*) malloc(2*sizeof(int));
         pipe(fd[i]);
+
     }
 
-    // Variável de controle para parar a execução caso necessário
-    int continua_execucao = 1;
-
-    // Roda pela quantidade de filhos/forks que serão necessários
-    for(i=0; i<filhos; i++)
-    {
+    // Itera sobre blocos e tipo usando a quantidade de filhos/forks que serão necessários
+    for(i = 0; i < filhos; i++){
         int status;
         pid = fork();
 
-        // Filho
-        if(pid == 0)
-        {
+        // Processo filho
+        if(pid == 0){
             // Pipe
-            if (tipo[i] == 0)
-            {
-                if(i != 0)
-                {
+            if (tipo[i] == 0){
+                if(i != 0){
                     close(fd[i-1][1]);
                     dup2(fd[i-1][0], STDIN_FILENO);
                     close(fd[i-1][0]);
                 }
+
                 // Condições que a saída nao deve ser redirecionada pro terminal como texto
-                if(i != filhos-1 && tipo[i+1] == 0) 
-                {
+                if(i != filhos-1 && tipo[i+1] == 0){
                     close(fd[i][0]);
                     dup2(fd[i][1], STDOUT_FILENO);
                     close(fd[i][1]);
                 }
+
                 // Retorna -1 caso o comando falhe 
                 int resultado = execvp(cmd[blocos[i]], &cmd[blocos[i]]);
                 if (resultado == -1)
                     exit(-1);
+                // Retorna 0 caso tenha êxito
                 exit(0);
             }
-            // Background
-            else if (tipo[i] == 4)
-            {
-		int resultado = execvp(cmd[blocos[i]], &cmd[blocos[i]]);
-                //execlp ("/bin/bg", "bg", getpid(), NULL);
-
-                if (resultado == -1)
-                    exit(-1);
-                exit(0);
-            }
-            // Demais casos
-            else
-            {
+            // Demais casos (background, OR e AND)
+            else{
                 int resultado = execvp(cmd[blocos[i]], &cmd[blocos[i]]);
+
                 if (resultado == -1)
                     exit(-1);
                 exit(0);
             }
         }
 
-        // Pai
-        else if (pid > 0)
-        {
+        // Processo pai
+        else if (pid > 0){
+
             // Fecha o lado do pipe que não vai ser necessário
             if(tipo[i] == 0)
                 close(fd[i][1]);
             
-            // Espera o processo filho terminar
-            if(tipo[i] == 4)
-            	waitpid(pid, &status, WNOHANG);
-	    else 
-	    	waitpid(pid, &status, 0);
-            // Caso OR. Se o comando foi executado com sucesso, 
-            // interrompe a execução dos demais comandos
-            if(tipo[i] == 2)
-            {
+            // Espera o processo filho terminar exceto para background
+            if(tipo[i] == 4) waitpid(pid, &status, WNOHANG);
+            else waitpid(pid, &status, 0);
+
+            // OR
+            if(tipo[i] == 2){
+                /* 
+                    Se o comando foi executado com sucesso, 
+                    interrompe a execução dos demais comandos OR
+                */
                 if(status == 0){
-                    //continua_execucao = 0;
+
                     while(tipo[i] == 2 && i < filhos -1) i = i + 1;
+
                 }
             }
 
-            // Caso AND. Se o comando falhou na execução, 
-            // interrompe a execução dos demais comandos
-            else if(tipo[i] == 3)
-            {
+            // AND
+            else if(tipo[i] == 3){
+                /* 
+                    Se o comando falhou na execução,
+                    interrompe a execução dos demais comandos AND
+                */
                 if(status != 0){
-                    //continua_execucao = 0;
                     while(tipo[i] == 3 && i < filhos -1) i = i + 1;
                 }
             }
@@ -216,19 +242,13 @@ int main(int argc, char **argv)
         }
 
         // Erro na criação do fork()
-        else
-            printf("Erro no fork()");
+        else printf("Erro no fork()");
 
-        // Interrompe a execução de acordo com o caso OR ou AND
-        if(continua_execucao == 0)
-            break;
     }
 
-    // Liberando espaço alocado
-    for(i=0; i<filhos; i++)
-    {
-        free(fd[i]);
-    }
+    // Liberando os espaços alocados
+    for(i=0; i<filhos; i++) free(fd[i]);
+    
     free(fd);
 
     return 0;
