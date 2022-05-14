@@ -1,23 +1,23 @@
 /*
-IMPLEMENTAÇÃO DE UM SHELL
+Projeto 1: Shell 
 --------------------------
 Aluno: Bruno Rasera
    RA: 143196
-Aluno: Leonardo Silva Pinto
-   RA: 133732
+Aluno: Daniel de Souza Paiva
+   RA: 143196
+Aluno: Letícia A. P. Lisboa
+   RA: 139969
+Aluno: Mateus Gomes Ferreira
+   RA: 140886
 Os comandos devem ser utilizados entre aspas. Ex: ./a.out ls -la "|" grep teste
 tipo 0 => |
-tipo 1 => ;
-tipo 2 => || (OR)
-tipo 3 => && (AND)
-tipo 4 => &
+tipo 1 => || (OR)
+tipo 2 => && (AND)
+tipo 3 => &
 Exemplos de comandos:
 ./a.out ls -la
 ./a.out ls -la "|" grep teste
 ./a.out ls -la "|" grep teste "|" wc -l
-./a.out echo "SO 2021" ";" echo "ADE Viva"
-./a.out echo "SO 2021" ";" echo "ADE Viva" ";" echo "Unifesp"
-./a.out echo "SO 2021" ";" eco "ADE Viva" ";" echo "Unifesp"
 ./a.out echo "Mensagem 1" "&&" ls 
 ./a.out echo "Mensagem 1" "&&" ls "&&" ls -la "|" grep teste
 ./a.out echo "Mensagem 1" "||" echo "Mensagem 2" "||" echo "Mensagem 3"
@@ -117,18 +117,9 @@ int main(int argc, char **argv){
             k = k + 2;
         }
 
-        // Caso independente (;)
-        else if(strcmp(cmd[i], ";") == 0){
-            tipo[k] = 1;
-            blocos[filhos] = i+1;
-            cmd[i] = NULL;
-            filhos++;
-            k++;
-        }
-
         // Caso OR ("||")
         else if(strcmp(cmd[i], "||") == 0){
-            tipo[k] = 2;
+            tipo[k] = 1;
             blocos[filhos] = i+1;
             cmd[i] = NULL;
             filhos++;
@@ -137,7 +128,7 @@ int main(int argc, char **argv){
 
         // Caso AND ("&&")
         else if(strcmp(cmd[i], "&&") == 0){
-            tipo[k] = 3;
+            tipo[k] = 2;
 
             blocos[filhos] = i+1;
             cmd[i] = NULL;
@@ -147,7 +138,7 @@ int main(int argc, char **argv){
 
         // Caso background ("&")
         else if(strcmp(cmd[i], "&") == 0){
-            tipo[k] = 4;
+            tipo[k] = 3;
             blocos[filhos] = i+1;
             cmd[i] = NULL;
             filhos++;
@@ -212,30 +203,30 @@ int main(int argc, char **argv){
                 close(fd[i][1]);
             
             // Espera o processo filho terminar exceto para background
-            if(tipo[i] == 4) waitpid(pid, &status, WNOHANG);
+            if(tipo[i] == 3) waitpid(pid, &status, WNOHANG);
             else waitpid(pid, &status, 0);
 
             // OR
-            if(tipo[i] == 2){
+            if(tipo[i] == 1){
                 /* 
                     Se o comando foi executado com sucesso, 
                     interrompe a execução dos demais comandos OR
                 */
                 if(status == 0){
 
-                    while(tipo[i] == 2 && i < filhos -1) i = i + 1;
+                    while(tipo[i] == 1 && i < filhos -1) i = i + 1;
 
                 }
             }
 
             // AND
-            else if(tipo[i] == 3){
+            else if(tipo[i] == 2){
                 /* 
                     Se o comando falhou na execução,
                     interrompe a execução dos demais comandos AND
                 */
                 if(status != 0){
-                    while(tipo[i] == 3 && i < filhos -1) i = i + 1;
+                    while(tipo[i] == 2 && i < filhos -1) i = i + 1;
                 }
             }
             
@@ -248,7 +239,7 @@ int main(int argc, char **argv){
 
     // Liberando os espaços alocados
     for(i=0; i<filhos; i++) free(fd[i]);
-    
+
     free(fd);
 
     return 0;
