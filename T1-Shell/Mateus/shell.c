@@ -9,22 +9,25 @@ Aluno: Letícia A. P. Lisboa
    RA: 139969
 Aluno: Mateus Gomes Ferreira
    RA: 140886
-Os comandos devem ser utilizados entre aspas. Ex: ./a.out ls -la "|" grep teste
+Os comandos devem ser utilizados entre aspas. Ex: ./terminal ls -la "|" grep teste
 tipo 0 => |
 tipo 1 => || (OR)
 tipo 2 => && (AND)
 tipo 3 => &
+Compilado como:
+gcc -Wall -o terminal ./shell.c
+
 Exemplos de comandos:
-./a.out ls -la
-./a.out ls -la "|" grep teste
-./a.out ls -la "|" grep teste "|" wc -l
-./a.out echo "Mensagem 1" "&&" ls 
-./a.out echo "Mensagem 1" "&&" ls "&&" ls -la "|" grep teste
-./a.out echo "Mensagem 1" "||" echo "Mensagem 2" "||" echo "Mensagem 3"
-./a.out eco "Mensagem 1" "||" echo "Mensagem 2" "||" echo "Mensagem 3"
-./a.out eco "Mensagem 1" "||" eco "Mensagem 2" "||" echo "Mensagem 3"
-./a.out ping -c1 www.unifesp.br "&&" echo "SERVIDOR DISPONIVEL" "||" echo "SERVIDOR INDISPONIVEL"
-./a.out ping -c5 www.google.com "&"
+./terminal ls -la
+./terminal ls -la "|" grep teste
+./terminal ls -la "|" grep teste "|" wc -l
+./terminal echo "Mensagem 1" "&&" ls 
+./terminal echo "Mensagem 1" "&&" ls "&&" ls -la "|" grep teste
+./terminal echo "Mensagem 1" "||" echo "Mensagem 2" "||" echo "Mensagem 3"
+./terminal eco "Mensagem 1" "||" echo "Mensagem 2" "||" echo "Mensagem 3"
+./terminal eco "Mensagem 1" "||" eco "Mensagem 2" "||" echo "Mensagem 3"
+./terminal ping -c1 www.unifesp.br "&&" echo "SERVIDOR DISPONIVEL" "||" echo "SERVIDOR INDISPONIVEL"
+./terminal ping -c5 www.google.com "&"
 */
 
 #include <stdio.h>
