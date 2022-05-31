@@ -123,7 +123,7 @@ void *reducer(void *args) {
     int cont = 0;
     BucketList l = hashTable[h];
 
-    printf("%d ", h);
+    //printf("%d ", h);
 
     while (1)
     {
@@ -136,7 +136,8 @@ void *reducer(void *args) {
             reducersWorking[h] = 0;
             pthread_exit(NULL);
         }
-        l = l->next;
+        if(l->next == NULL) l = hashTable[h];
+        else l = l->next;
 
         cont++;
     }
