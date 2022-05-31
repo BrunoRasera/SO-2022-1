@@ -106,10 +106,11 @@ int buscaRepete(int h, BucketList l)
             sem_wait(&mutex[h]);
             ant->next = atual->next;
             l->num = l->num + atual->num;
-            //free(atual);
+            free(atual);
             atual = ant;
             if (!flag) flag = 1;
             itens[h] -= 1;
+            sem_post(&mutex[h]);
         }
         ant = atual;
         atual = atual->next;
@@ -207,6 +208,7 @@ int main(int argc, char *argv[])
     {
         pthread_join(map[i], NULL);
     }
+
     for(int i = 0; i < SIZEHASH; i++)
     {
         pthread_join(red[i].t, NULL);
