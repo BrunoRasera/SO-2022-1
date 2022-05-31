@@ -27,7 +27,7 @@ typedef struct BucketListRec
 BucketList hashTable[SIZEHASH];
 
 #define MAXLINESIZE 1000
-#define MAXLINENUMBER 1000
+#define MAXLINENUMBER 10
 
 sem_t mutex[SIZEHASH];
 int vazio[SIZEHASH];
@@ -77,16 +77,18 @@ void insereHash(char *palavra)
 void *mapper(void *args)
 {
     char *str = (char *)args;
-    char delimiters[5] = "-\n ";
+    char delimiters[10] = "- .,\n\0";
     char *token;
 
     token = strtok(str, delimiters);
 
     while (token != NULL)
     {
+        //printf("%s ", token);
         insereHash(token);
         token = strtok(NULL, delimiters);
     }
+    //printf("terminou mapper\n");
 
     mappersWorking--;
     
@@ -103,10 +105,10 @@ int buscaRepete(int h, BucketList l)
         {
             sem_wait(&mutex[h]);
             ant->next = atual->next;
-            l->num = l->num + 1;
-            free(atual);
+            l->num = l->num + atual->num;
+            //free(atual);
             atual = ant;
-            flag = 1;
+            if (!flag) flag = 1;
             itens[h] -= 1;
         }
         ant = atual;
@@ -121,6 +123,8 @@ void *reducer(void *args) {
     int cont = 0;
     BucketList l = hashTable[h];
 
+    printf("%d ", h);
+
     while (1)
     {
         if (!vazio[h])
@@ -133,7 +137,11 @@ void *reducer(void *args) {
             pthread_exit(NULL);
         }
         l = l->next;
+
+        cont++;
     }
+
+    pthread_exit(NULL);
 }
 
 void init(void) {
@@ -144,6 +152,13 @@ void init(void) {
         itens[i] = 0;
     }
 }
+
+struct thread_t {
+	pthread_t t;
+	int h;
+};
+
+typedef struct thread_t thread_t;
 
 int main(int argc, char *argv[])
 {
@@ -168,18 +183,23 @@ int main(int argc, char *argv[])
 
     init();
 
-    pthread_t map[MAXLINESIZE], red[SIZEHASH];
+    pthread_t map[MAXLINESIZE];
+
+    thread_t red[SIZEHASH];
 
     while (fgets(palavras[linhas], MAXLINESIZE, source) != NULL)
     {
-        pthread_create(&map[linhas], NULL, mapper, palavras);
+        palavras[linhas][strcspn(palavras[linhas], "\r\n")] = 0;
+        //printf("%s", palavras[linhas]);
+        pthread_create(&map[linhas], NULL, mapper, palavras[linhas]);
         linhas++;
         mappersWorking++;
     }
 
     for(int i = 0; i < SIZEHASH; i++)
     {
-        pthread_create(&red[i], NULL, reducer, &i);
+        pthread_create(&red[i].t, NULL, reducer, &red[i].h);
+        red[i].h = i;
     }
 
     for(int i = 0; i < linhas; i++)
@@ -188,20 +208,25 @@ int main(int argc, char *argv[])
     }
     for(int i = 0; i < SIZEHASH; i++)
     {
-        pthread_join(red[i], NULL);
+        pthread_join(red[i].t, NULL);
     }
 
     for(int i = 0; i < SIZEHASH; i++)
     {
         BucketList atual = hashTable[i];
-        if (atual != NULL)
+        while(atual != NULL)
         {
-            while(atual != NULL)
-            {
-                printf("%s %d\n", atual->valor, atual->num);
-            }
+            printf("%s %d\n", atual->valor, atual->num);
+            atual = atual->next;
         }
     }
+
+    /*for(int i = 0; i < SIZEHASH; i++)
+    {
+        printf("%d ", vazio[i]);
+    }*/
+
+    //printf("%d", mappersWorking);
 
     fclose(source);
     return 0;
