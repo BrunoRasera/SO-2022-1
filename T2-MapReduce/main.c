@@ -10,8 +10,8 @@
     *--------------------------------*
 
     Usage: 
-    -> Compiled as: gcc -Wall -o mapReduce ./mapred.c
-    -> mapReduce *.txt
+    -> Compiled as: gcc -Wall -o mapReduce ./mapred.c -lpthread
+    -> ./mapReduce *.txt
 
     Function:
     -> Given a *.txt file, creates a *_out.txt file that contains the number of ocurrences of 
