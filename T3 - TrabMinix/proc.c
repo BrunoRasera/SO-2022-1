@@ -1613,36 +1613,46 @@ void enqueue(
 
   rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
-
-	/* Adiciona o processo a uma fila vazia */
+	/* Insere em uma fila vazia */		
 	if (!rdy_head[q])
 	{									/* add to empty queue */
 		rdy_head[q] = rdy_tail[q] = rp; /* create a new queue */
 		rp->p_nextready = NULL;			/* mark new end */
 	}
+	/* Insere em uma fila populada */	
 	else
-	{ /* Adiciona o processo a uma fila populada */
-		struct proc *atual = rdy_head[q], *ant = NULL;
-		int parada = 0;
-		while (atual != NULL && !parada)
+	{
+		struct proc *atual = rdy_head[q]; 
+		struct proc *ant = NULL;
+
+		/* Os processos com menor tempo de CPU restante ficam
+		 * mais próximos da cabeca da fila e os que possuem
+		 * maior tempo de CPU restante ficam mais proximos da cauda */
+		while (atual != NULL)
 		{
+			/* Encontramos um processo cujo tempo restante de CPU e maior 
+			 * que o de rp, portanto rp deve ser inderido antes de atual */
 			if (rp->p_cpu_time_left < atual->p_cpu_time_left)
 			{
 				if(atual != rdy_head[q]) 
 				{
 					ant->p_nextready = rp;
 				}
+				/* Se atual for a cabeça da fila, ela devera ser atualizada */
 				else 
 				{
 					rdy_head[q] = rp;
 				}
 				rp->p_nextready = atual;
-				parada = 1;
+				break;
 			}
+			
 			ant = atual;
 			atual = atual->p_nextready;
 		}
 
+		/* Se o atual foi nulo, nao encontramos um processo com tempo de CPU
+		 *  restante maior que o de rp, logo rp sera inserido na cauda */
 		if (atual == NULL)
 		{
 			rdy_tail[q]->p_nextready = rp; /* chain tail of queue */
