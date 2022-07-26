@@ -17,7 +17,7 @@ struct pagina_t
     
 };
 
-struct pagina_t mv[SMV], mr[SMR], sw[SSW];
+struct pagina_t mv[SMV];
 
 //Quanto menos um algoritmo gerar pageMiss, mais evitado será o swap. 
 //Um critério para determinar se uma solução é melhor que outra é o numero de pagemiss
@@ -31,10 +31,5 @@ struct pagina_t mv[SMV], mr[SMR], sw[SSW];
  - Qual a página responsável pelo endereço 3000? A memória virtual para esse exemplo está sendo organizada de modo sequencial, na hora de acessar
  a pagina, verifica-se se ela está presente ou ausente. Se acessou a página e a página está presente, então não fez nada, só atualiza a contagem de
  conferências feitas mas nn mexe na de pagemiss. (LEMBRAR DE ATUALIZAR O BIT REFERENCIADA!!)
- - Posso gerar eventos de memoria onde ocorrem mudanças na página (alterar o bit modificada)
- 
- 
- 
- 
- 
+ - Posso gerar eventos de memoria onde ocorrem mudanças na página (alterar o bit modificada) 
  */
