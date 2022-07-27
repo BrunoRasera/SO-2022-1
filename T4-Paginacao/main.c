@@ -71,12 +71,26 @@ void init()
     for(int i = 0; i < SMV; i++)
     {
         //mv[i].deslocamento
-        mv[i].modificada = rand()%2;
         mv[i].pad = 0;
+        /* Memoria real com espacos livres */
         if (presenteTotal < SMR) mv[i].presente = rand()%2;
+        /* Memoria real sem espacos livres */
         else mv[i].presente = 0;
-        if (mv[i].presente) presenteTotal++;
-        mv[i].referenciada = rand()%2;
+        /* Se a pagina estiver em memoria, aquela pagina pode ser 
+         * referenciada ou modificada
+         */
+        if (mv[i].presente) 
+        {
+            presenteTotal++;
+            mv[i].referenciada = rand()%2;
+            mv[i].modificada = rand()%2;
+        }
+        /* Caso contrario, nao*/
+        else
+        {
+            mv[i].referenciada = 0;
+            mv[i].modificada = 0;
+        }
     }
 }
 
@@ -101,19 +115,27 @@ int main()
     {
         for(int j = 0; j < N_PROC; j++)
         {
+            /* Gerando um acesso a uma pagina aleatoria 
+             * dentro dos limites daquele processo 
+             */
             int upper = proc[i].last;
             int lower = proc[i].first;
             int access = (rand() % (upper - lower + 1)) + lower;
 
+            /* Page Miss */
             if (!mv[access].presente)
             {
-                //chamar escalonador
+                //chamar escalonador aqui
                 pageMisses++;
             }
+            /* Pode ser modificada e foi referenciada */
             mv[access].modificada = rand()%2;
-            mv[access].referenciada = rand()%2;
+            mv[access].referenciada = 1;
         }
 
+        /* Apos todos os processos acessarem suas paginas
+         * as referencias sao zeradas
+         */
         zeroReferences();
     }
 
