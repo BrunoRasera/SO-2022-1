@@ -43,7 +43,7 @@ int main(int argc, char **argv){
     char b[1], out[10];
     fdAux = open("count.txt", O_RDONLY, S_IRUSR | S_IWUSR);
     read(fdAux, b, 1);
-    b[0]++;//update count
+    b[0]=0;//update count
     close(fdAux);//Back to start
     fdAux = open("count.txt", O_WRONLY, S_IRUSR | S_IWUSR);
     write(fdAux, b, 1);//updating the count
