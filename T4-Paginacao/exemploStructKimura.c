@@ -1,4 +1,8 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #define SMV 1
 #define SMR 2
 #define SSW 3
@@ -33,3 +37,17 @@ struct pagina_t mv[SMV];
  conferências feitas mas nn mexe na de pagemiss. (LEMBRAR DE ATUALIZAR O BIT REFERENCIADA!!)
  - Posso gerar eventos de memoria onde ocorrem mudanças na página (alterar o bit modificada) 
  */
+
+int main(int argc, char **argv){
+    int a, fdAux;
+    char b[1], out[10];
+    fdAux = open("count.txt", O_RDONLY, S_IRUSR | S_IWUSR);
+    read(fdAux, b, 1);
+    b[0]++;//update count
+    close(fdAux);//Back to start
+    fdAux = open("count.txt", O_WRONLY, S_IRUSR | S_IWUSR);
+    write(fdAux, b, 1);//updating the count
+    sprintf(out,"%d",b[0]);
+    printf("%s", out);
+    close(fdAux);
+}

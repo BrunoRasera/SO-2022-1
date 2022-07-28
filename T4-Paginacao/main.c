@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+
 #define SMV 100
 #define SMR 50
 const int SSW = SMV - SMR;
@@ -11,6 +15,8 @@ const int SSW = SMV - SMR;
 #define N_ACCESS 100
 
 int pageMisses = 0;
+
+char dirPages[100];//GLOBAL!!
 
 int presenteTotal = 0;
 
@@ -57,6 +63,19 @@ void init()
     mv = (PaginaT) calloc(SMV, sizeof(struct pagina_t));
     proc = (ProcessoT) calloc(N_PROC, sizeof(struct processo_t));
     int aux = 0;
+    int fdAux; //ponteiro para a pagina atual
+    char pageNum[100], charAux[1];
+    
+    //BLOCO DE CRIACAO DAS PAGINAS DE MEMORIA E SEU DIRETORIO EM DISCO:
+    fdAux = open("count.txt", O_RDONLY, S_IRUSR | S_IWUSR);
+    read(fdAux, charAux, 1);//Ler a contagem atual
+    close(fdAux);//Resetar o ponteiro do arquivo
+    charAux[0]++;//incrementando o contador de teste
+    fdAux = open("count.txt", O_WRONLY, S_IRUSR | S_IWUSR);
+    write(fdAux, charAux, 1);//atualizando o contador no arquivo
+    close(fdAux);//fechando o arquivo
+    sprintf(dirPages,"memPages_test%d",charAux[0]);//criando o nome do diretorio
+    mkdir(dirPages);//Criando o diretorio dos testes
     for(int i = 0; i < N_PROC; i++)
     {
         proc[i].first = aux;
@@ -91,6 +110,12 @@ void init()
             mv[i].referenciada = 0;
             mv[i].modificada = 0;
         }
+        
+        //Pagina ok -> carregar em memoria
+        
+        sprintf(pageNum, "%s/%d.txt",dirPages,i);
+        fdAux = open(pageNum, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+        close(fdAux);
     }
 }
 
@@ -100,7 +125,7 @@ void zeroReferences()
         if (mv[i].referenciada) mv[i].referenciada = 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
     time_t t;
     srand((unsigned) time(&t));
@@ -141,3 +166,25 @@ int main()
 
     printf("Total page misses: %d", pageMisses);
 }
+
+//garantir mesmos inputs pelo menos 3 vezes, 
+/*
+X -> Configurações em numeros de processos ou faixa de aleatoriedades (tamanho de processos);
+(A quantidade de processos pode ser pequena mas um pode ter 10 pag, outro 20, outro 30)
+
+Conjunto de processos onde o tamanho das paginas variam
+Ver as possibilidades de X processos de tamanho 10, Y processos de tamanho 20, Z processos de tamanho 30
+
+Ver tbm a possibilidade de processos de mesmo tamanho
+
+No relatório é importante aprimorar a analise critica sobre as coisas, é importante não so narrar aquele resultado, mas
+tambem discutir aquilo, refletir sobre o funcionamento do seu algoritmo e pq q esse funcionamento refletiu esse valor
+
+2 casos de teste: (3 exec no min pra cada, em cada algoritmo)
+1- Tam fixo pra memoria, variando a qtd de paginas que uma quatidade de processos tem acesso, ex: x processos c 10
+x processos com tamanho 10, y processos com tamanho 20 e z processos de tamanho 30, sendo NProx = x+y+z
+
+2- processos de mesmo tamanho
+
+Quantificar a qtd de page miss e de acesos a memoria (lembrar que guardar a pag conta um acesso e carregar tbm conta um)
+*/
