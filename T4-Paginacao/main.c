@@ -14,7 +14,9 @@ const int SSW = SMV - SMR;
 #define N_PROC 10
 #define N_ACCESS 100
 
+//Contagens
 int pageMisses = 0;
+int memAccesses = 0;
 
 char dirPages[100];//GLOBAL!!
 
@@ -125,6 +127,79 @@ void zeroReferences()
         if (mv[i].referenciada) mv[i].referenciada = 0;
 }
 
+void nur()
+{
+    int class1 = -1, class2 = -1, class3 = -1;
+
+    for (int i = 0; i < SMV; i++)
+    {   
+        if(mv[i].presente)
+        {
+            //Classe 0: nao referenciada e nao modificada
+            if (!mv[i].referenciada && !mv[i].modificada)
+            {
+                memAccesses++;
+                mv[i].presente = 0;
+                return;
+            }
+            //Classe 1: nao referenciada e modificada
+            else if (!mv[i].referenciada && mv[i].modificada) class1 = i;
+
+            //Classe 2: referenciada e nao modificada
+            else if (mv[i].referenciada && !mv[i].modificada)  class2 = i;
+
+            //Classe 3: referenciada e modificada
+            else class3 = i;
+        }
+    }
+
+    if (class1 >= 0)
+    {
+        memAccesses += 2;
+        mv[class1].presente = 0;
+        mv[class1].modificada = 0;
+    }
+    else if (class2 >= 0)
+    {
+        memAccesses++;
+        mv[class2].presente = 0;
+        mv[class2].referenciada = 0;
+    }
+    else if (class3 >= 0)
+    {
+        memAccesses += 2;
+        mv[class3].presente = 0;
+        mv[class3].referenciada = 0;
+        mv[class3].modificada = 0;
+    }
+}
+
+int ponteiroRelogio = 0;
+
+void relogio()
+{
+    while(1)
+    {
+        if (mv[ponteiroRelogio].presente)
+        {
+            if (!mv[ponteiroRelogio].referenciada)
+            {
+                mv[ponteiroRelogio].presente = 0;
+                memAccesses++;
+                if (mv[ponteiroRelogio].modificada) 
+                {
+                    mv[ponteiroRelogio].modificada = 0;
+                    memAccesses++;
+                }
+                return;
+            }
+            else mv[ponteiroRelogio].referenciada = 0;
+        }
+
+        ponteiroRelogio = (ponteiroRelogio + 1) % SMV;
+    }
+}
+
 int main(int argc, char **argv)
 {
     time_t t;
@@ -143,19 +218,22 @@ int main(int argc, char **argv)
             /* Gerando um acesso a uma pagina aleatoria 
              * dentro dos limites daquele processo 
              */
-            int upper = proc[i].last;
-            int lower = proc[i].first;
-            int access = (rand() % (upper - lower + 1)) + lower;
+            int upper = proc[j].last;
+            int lower = proc[j].first;
+            int tryingAccess = (rand() % (upper - lower + 1)) + lower;
 
             /* Page Miss */
-            if (!mv[access].presente)
+            if (!mv[tryingAccess].presente)
             {
                 //chamar escalonador aqui
                 pageMisses++;
+                //nur();
+                relogio();
             }
             /* Pode ser modificada e foi referenciada */
-            mv[access].modificada = rand()%2;
-            mv[access].referenciada = 1;
+            mv[tryingAccess].modificada = rand()%2;
+            mv[tryingAccess].referenciada = 1;
+            mv[tryingAccess].presente = 1;
         }
 
         /* Apos todos os processos acessarem suas paginas
@@ -164,7 +242,8 @@ int main(int argc, char **argv)
         zeroReferences();
     }
 
-    printf("Total page misses: %d", pageMisses);
+    printf("Total page misses: %d\n", pageMisses);
+    printf("Total memory accesses: %d\n", memAccesses);
 }
 
 //garantir mesmos inputs pelo menos 3 vezes, 
