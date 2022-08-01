@@ -244,6 +244,14 @@ int main(int argc, char **argv)
 
     printf("Total page misses: %d\n", pageMisses);
     printf("Total memory accesses: %d\n", memAccesses);
+
+    char resultsDir[100], resultsText[200];
+
+    sprintf(resultsDir, "%s/results.txt",dirPages);
+    int fdRes = open(resultsDir, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    int n = sprintf(resultsText, "Total page misses: %d\nTotal memory accesses: %d\n", pageMisses, memAccesses);
+    write(fdRes, resultsText, n);
+    close(fdRes);
 }
 
 //garantir mesmos inputs pelo menos 3 vezes, 
