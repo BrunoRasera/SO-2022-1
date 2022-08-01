@@ -5,14 +5,27 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <math.h>
 
-#define SMV 100
-#define SMR 50
+/*#define pags_p1 10
+#define pags_p2 20
+#define pags_p3 30
+
+#define p1 30
+#define p2 20
+#define p3 10*/
+
+const int N_PROC = 100;
+#define N_ACCESS 100
+
+const int SMV = 800;
+const int SMR = 50;
 const int SSW = SMV - SMR;
 //MV > MR e SW = MV - MR
 
-#define N_PROC 10
-#define N_ACCESS 100
+const int p1 = 0.25 * SMV / (0.5 * N_PROC);
+const int p2 = 0.25 * SMV / (0.25 * N_PROC);
+const int p3 = 0.5 * SMV / (0.25 * N_PROC);
 
 //Contagens
 int pageMisses = 0;
@@ -67,6 +80,7 @@ void init()
     int aux = 0;
     int fdAux; //ponteiro para a pagina atual
     char pageNum[100], charAux[1];
+    int i;
     
     //BLOCO DE CRIACAO DAS PAGINAS DE MEMORIA E SEU DIRETORIO EM DISCO:
     fdAux = open("count.txt", O_RDONLY, S_IRUSR | S_IWUSR);
@@ -78,7 +92,7 @@ void init()
     close(fdAux);//fechando o arquivo
     sprintf(dirPages,"memPages_test%d",charAux[0]);//criando o nome do diretorio
     mkdir(dirPages);//Criando o diretorio dos testes
-    for(int i = 0; i < N_PROC; i++)
+    /*for(i = 0; i < N_PROC; i++)
     {
         proc[i].first = aux;
         //proc[i].last = proc[i].first + 2 + rand()%4;
@@ -87,9 +101,20 @@ void init()
         aux = proc[i].last + 1;
     }
 
-    proc[N_PROC-1].last = SMV - 1;
+    proc[N_PROC-1].last = SMV - 1;*/
 
-    for(int i = 0; i < SMV; i++)
+    for(i = 0; i < N_PROC; i++)
+    {
+        proc[i].first = aux;;
+
+        if (i < N_PROC * 0.5) proc[i].last = proc[i].first + p1 - 1;
+        else if (i < N_PROC * 0.75) proc[i].last = proc[i].first + p2 - 1;
+        else proc[i].last = proc[i].first + p3 - 1;
+
+        aux = proc[i].last + 1;
+    }
+
+    for(i = 0; i < SMV; i++)
     {
         //mv[i].deslocamento
         mv[i].pad = 0;
