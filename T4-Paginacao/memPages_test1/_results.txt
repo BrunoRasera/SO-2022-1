@@ -1,0 +1,2 @@
+Total page misses: 9521
+Total memory accesses: 14085
