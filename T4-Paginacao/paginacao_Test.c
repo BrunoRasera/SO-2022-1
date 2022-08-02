@@ -150,7 +150,7 @@ void init()
     proc = (ProcessoT) calloc(N_PROC, sizeof(struct processo_t));
     int aux = 0;
     int fdAux; //ponteiro para a pagina atual
-    char pageNum[100], charAux[1];
+    char pageNum[100], charAux[1], pageData[100];
     int i;
     
     //BLOCO DE CRIACAO DAS PAGINAS DE MEMORIA E SEU DIRETORIO EM DISCO:
@@ -227,11 +227,14 @@ void init()
         //Pagina ok -> carregar em memoria
         
         sprintf(pageNum, "%s/%d.txt",dirPages,i);
+        int n = sprintf(pageData,"Created with: p%dv%dm%d",mv[i].presente,mv[i].referenciada,mv[i].modificada);
+
         fdAux = open(pageNum, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);//criando a pagina no diretorio de paginas daquele teste
         if (fdAux == -1) { //erro de abertura
 		    perror("open: ");
 		    exit(1);
 	    }
+        write(fdAux, pageData, n);
         close(fdAux);
     }
 }
